@@ -1,7 +1,7 @@
 {
   "name": "@syno/exp-ui",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "./dist/exp-ui.cjs",
   "module": "./dist/exp-ui.js",
@@ -23,6 +23,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "postbuild": "node scripts/compat-css.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "prepare": "npm run build"
@@ -58,6 +59,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
+    "postcss": "^8.5.25",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3",
