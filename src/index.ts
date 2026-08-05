@@ -4,6 +4,8 @@ import "./index.css";
 
 export { DatePicker } from "./components/shared/date-picker";
 export type { DatePickerProps } from "./components/shared/date-picker";
+export { Input } from "./components/shared/input";
+export type { InputProps } from "./components/shared/input";
 export { Select } from "./components/shared/select";
 export type { Option, SelectProps } from "./components/shared/select";
 export { MultiSelect } from "./components/shared/multi-select";

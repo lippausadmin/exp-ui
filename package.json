@@ -1,7 +1,7 @@
 {
   "name": "@syno/exp-ui",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "main": "./dist/exp-ui.cjs",
   "module": "./dist/exp-ui.js",
