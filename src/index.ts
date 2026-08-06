@@ -15,6 +15,8 @@ export type {
 } from "./components/shared/multi-select";
 export { PageContainer } from "./components/shared/page-container";
 export type { PageContainerProps } from "./components/shared/page-container";
+export { PageTabs } from "./components/shared/page-tabs";
+export type { PageTabsProps, Tab } from "./components/shared/page-tabs";
 export { PageTitle } from "./components/shared/page-title";
 export type { PageTitleProps } from "./components/shared/page-title";
 export { Table as DataTable } from "./components/shared/table";
