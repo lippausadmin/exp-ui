@@ -18,14 +18,21 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useState } from "react";
+import * as Yup from "yup";
 
 import { DatePicker } from "@/components/shared/date-picker";
+import { ModalAlert } from "@/components/shared/modal/modal-alert";
+import {
+  ModalImport,
+  type ImportMode,
+} from "@/components/shared/modal/modal-import";
 import {
   MultiSelect,
   type MultiSelectOption,
 } from "@/components/shared/multi-select";
 import { Select, type Option } from "@/components/shared/select";
 import { Table, type ColumnDef } from "@/components/shared/table";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -154,7 +161,8 @@ const tableColumns: ColumnDef<CustomerRow>[] = [
   {
     accessorKey: "client",
     header: "Cliente",
-    headerDescription: "Clique nos cabecalhos ordenaveis para testar sorting local.",
+    headerDescription:
+      "Clique nos cabecalhos ordenaveis para testar sorting local.",
     sortable: true,
     localSortable: true,
     ellipsis: true,
@@ -214,6 +222,38 @@ const tableColumns: ColumnDef<CustomerRow>[] = [
   },
 ];
 
+type ImportPreviewRow = {
+  codigo: string;
+  cliente: string;
+  cidade: string;
+  status: string;
+};
+
+const importSchemas = {
+  create: Yup.object({
+    codigo: Yup.string().required("Codigo e obrigatorio"),
+    cliente: Yup.string().required("Cliente e obrigatorio"),
+    cidade: Yup.string().required("Cidade e obrigatoria"),
+    status: Yup.string().required("Status e obrigatorio"),
+  }),
+  update: Yup.object({
+    codigo: Yup.string().required("Codigo e obrigatorio"),
+    status: Yup.string().required("Status e obrigatorio"),
+  }),
+};
+
+const importLayoutTemplates = {
+  create: [
+    {
+      codigo: "1021",
+      cliente: "Mercado Santa Luzia",
+      cidade: "Curitiba",
+      status: "Ativo",
+    },
+  ],
+  update: [{ codigo: "1021", status: "Bloqueado" }],
+};
+
 function SidebarNavSection({
   label,
   items,
@@ -259,6 +299,18 @@ const App = () => {
   >([]);
   const [tablePage, setTablePage] = useState(1);
   const [selectedRows, setSelectedRows] = useState<Set<CustomerRow>>(new Set());
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [lastModalAction, setLastModalAction] = useState("nenhuma");
+  const [lastImportResult, setLastImportResult] = useState(
+    "nenhum arquivo importado",
+  );
+
+  const modalToast = {
+    error: (message: string) => {
+      setLastImportResult(`Erro: ${message}`);
+    },
+  };
 
   return (
     <SidebarProvider
@@ -393,7 +445,8 @@ const App = () => {
                 <div>
                   <h2 className="text-sm font-semibold">DataTable</h2>
                   <p className="text-sm text-muted-foreground">
-                    Teste selecao, ordenacao local, coluna fixa, ellipsis, boolean icon e paginacao.
+                    Teste selecao, ordenacao local, coluna fixa, ellipsis,
+                    boolean icon e paginacao.
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -414,9 +467,73 @@ const App = () => {
                 onPageChange={setTablePage}
               />
             </section>
+
+            <section className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm">
+              <div>
+                <h2 className="text-sm font-semibold">Modals</h2>
+                <p className="text-sm text-muted-foreground">
+                  Teste ModalAlert e ModalImport com tokens do tema, validacao e
+                  preview.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  className="rounded-full"
+                  onClick={() => setIsAlertOpen(true)}
+                >
+                  Abrir ModalAlert
+                </Button>
+                <Button
+                  variant="main-outline"
+                  className="rounded-full"
+                  onClick={() => setIsImportOpen(true)}
+                >
+                  Abrir ModalImport
+                </Button>
+              </div>
+
+              <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                <p>Ultima acao do alerta: {lastModalAction}</p>
+                <p>Ultimo resultado de importacao: {lastImportResult}</p>
+              </div>
+
+              <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">CSV para testar:</p>
+                <pre className="mt-2 overflow-x-auto">
+                  codigo;cliente;cidade;status{"\n"}
+                  1021;Mercado Santa Luzia;Curitiba;Ativo{"\n"}
+                  1022;Distribuidora Vale Norte;Londrina;Pendente
+                </pre>
+              </div>
+            </section>
           </div>
         </main>
       </SidebarInset>
+
+      <ModalAlert
+        isOpen={isAlertOpen}
+        onClose={() => setIsAlertOpen(false)}
+        title="Confirmar alteracao"
+        description="Este modal usa AlertDialog e deve respeitar os tokens do tema atual."
+        onCancel={() => setLastModalAction("cancelado")}
+        onConfirm={() => setLastModalAction("confirmado")}
+      />
+
+      <ModalImport<ImportPreviewRow>
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        title="Importar clientes"
+        schemas={importSchemas}
+        layoutTemplates={importLayoutTemplates}
+        fileName="clientes"
+        acceptedFileTypes=".csv"
+        parseOptions={{ delimiter: ";", skipEmptyLines: true, header: true }}
+        toast={modalToast}
+        onConfirm={async (data, mode: ImportMode) => {
+          setLastImportResult(`${data.length} registro(s) em modo ${mode}`);
+        }}
+      />
     </SidebarProvider>
   );
 };
