@@ -71,6 +71,8 @@ export type ModalImportProps<
     header?: boolean;
   };
   toast?: ToastNotifier;
+  /** Delimitador do layout para download. Padrão: o de parseOptions, depois ";" */
+  layoutDelimiter?: string;
 };
 
 export function ModalImport<TData extends ImportedRow = ImportedRow>({
@@ -88,6 +90,7 @@ export function ModalImport<TData extends ImportedRow = ImportedRow>({
     header: true,
   },
   toast,
+  layoutDelimiter,
 }: ModalImportProps<TData>) {
   const notifyError = (message: string) => toast?.error(message);
   const [mode, setMode] = useState<ImportMode>("create");
@@ -178,6 +181,12 @@ export function ModalImport<TData extends ImportedRow = ImportedRow>({
                 message: err.message,
               });
             });
+          } else {
+            errors.push({
+              row: i + 2,
+              field: "",
+              message: getErrorMessage(error, "Linha inválida"),
+            });
           }
         }
       }
@@ -239,6 +248,8 @@ export function ModalImport<TData extends ImportedRow = ImportedRow>({
       setIsProcessing(true);
       await onConfirm(parsedData, mode);
       handleClose();
+    } catch (error: unknown) {
+      notifyError(getErrorMessage(error, "Não foi possível concluir a importação"));
     } finally {
       setIsProcessing(false);
     }
@@ -284,7 +295,7 @@ export function ModalImport<TData extends ImportedRow = ImportedRow>({
 
       let csvContent = "";
       refinedData.forEach((row) => {
-        csvContent += row.join(parseOptions.delimiter || ";") + "\n";
+        csvContent += row.join(layoutDelimiter || parseOptions.delimiter || ";") + "\n";
       });
 
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -441,7 +452,9 @@ export function ModalImport<TData extends ImportedRow = ImportedRow>({
                 <ul className="space-y-1 text-xs">
                   {validationErrors.slice(0, 10).map((error, index) => (
                     <li key={index} className="text-destructive">
-                      Linha {error.row}, Campo &quot;{error.field}&quot;: {error.message}
+                      Linha {error.row}
+                      {error.field ? <>, Campo &quot;{error.field}&quot;</> : null}:{" "}
+                      {error.message}
                     </li>
                   ))}
                   {validationErrors.length > 10 && (

@@ -150,7 +150,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
         <div className="relative w-full">
           {leftIcon && (
-            <div className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
               {leftIcon}
             </div>
           )}
@@ -176,7 +176,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           />
 
           {rightIcon && (
-            <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2">
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
               {rightIcon}
             </div>
           )}

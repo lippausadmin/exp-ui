@@ -123,6 +123,8 @@ export type DataTableProps<T> = {
   currentPage?: number;
   /** Callback executado quando a página é alterada */
   onPageChange?: (page: number) => void;
+  /** Quantidade de registros por página (usado para cálculo de páginas). Padrão: 100 */
+  pageSize?: number;
 
   /** Habilita seleção de linhas com checkboxes */
   enableRowSelection?: boolean;
@@ -130,6 +132,8 @@ export type DataTableProps<T> = {
   selectedRows?: Set<T>;
   /** Callback executado quando a seleção de linhas é alterada */
   onRowSelectionChange?: (selectedRows: Set<T>) => void;
+  /** Define se uma linha pode ser selecionada. Padrão: todas as linhas */
+  isRowSelectable?: (row: T) => boolean;
   /** Número de colunas de dados a serem fixadas (sticky) à esquerda da tabela */
   frozenColumns?: number;
   /** Mensagem a ser exibida quando não houver dados na tabela */
@@ -153,14 +157,15 @@ export function Table<T extends object>({
   totalCount = 0,
   currentPage = 1,
   onPageChange,
+  pageSize = 100,
   enableRowSelection = false,
   selectedRows: externalSelectedRows,
   onRowSelectionChange,
+  isRowSelectable,
   frozenColumns = 0,
   emptyMessage = "Nenhum resultado encontrado.",
   disabled = false,
 }: DataTableProps<T>) {
-  const pageSize = 100;
   const [internalSelectedRows, setInternalSelectedRows] = React.useState<
     Set<T>
   >(new Set());
@@ -315,7 +320,7 @@ export function Table<T extends object>({
   const handleSelectAll = (checked: boolean) => {
     const newSelected = new Set<T>();
     if (checked) {
-      sortedData.forEach((row) => {
+      selectableData.forEach((row) => {
         newSelected.add(row);
       });
     }
@@ -327,11 +332,16 @@ export function Table<T extends object>({
     }
   };
 
+  const selectableData = isRowSelectable
+    ? sortedData.filter((row) => isRowSelectable(row))
+    : sortedData;
+
   const isAllSelected =
-    sortedData.length > 0 && sortedData.every((row) => selectedRows.has(row));
+    selectableData.length > 0 &&
+    selectableData.every((row) => selectedRows.has(row));
 
   const isSomeSelected =
-    sortedData.some((row) => selectedRows.has(row)) && !isAllSelected;
+    selectableData.some((row) => selectedRows.has(row)) && !isAllSelected;
 
   const frozenColHeaderRefs = React.useRef<(HTMLTableCellElement | null)[]>([]);
   const checkboxHeaderRef = React.useRef<HTMLTableCellElement | null>(null);
@@ -456,7 +466,7 @@ export function Table<T extends object>({
                       }
                       onCheckedChange={handleSelectAll}
                       aria-label="Selecionar todas"
-                      disabled={disabled}
+                      disabled={disabled || selectableData.length === 0}
                     />
                   </div>
                 </TableHead>
@@ -490,7 +500,7 @@ export function Table<T extends object>({
                   >
                     {col.header}
                     {getSortSymbol(col) && (
-                      <span className="absolute top-1/2 right-1 -translate-y-1/2">
+                      <span className="absolute inset-y-0 right-1 flex items-center">
                         {getSortSymbol(col)}
                       </span>
                     )}
@@ -551,7 +561,10 @@ export function Table<T extends object>({
                             handleRowSelection(row, !!checked)
                           }
                           aria-label="Selecionar linha"
-                          disabled={disabled}
+                          disabled={
+                            disabled ||
+                            (isRowSelectable ? !isRowSelectable(row) : false)
+                          }
                         />
                       </TableCell>
                     )}

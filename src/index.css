@@ -72,3 +72,14 @@
 body {
   margin: 0;
 }
+
+/* Padrão shadcn: bordas sem cor explícita usam o token --border (o preflight do
+   Tailwind 4 usa currentColor, o que deixava chips e popovers com borda escura). */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop {
+    border-color: var(--color-border);
+  }
+}
