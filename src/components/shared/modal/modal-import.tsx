@@ -73,6 +73,8 @@ export type ModalImportProps<
   toast?: ToastNotifier;
   /** Delimitador do layout para download. Padrão: o de parseOptions, depois ";" */
   layoutDelimiter?: string;
+  /** Nome do arquivo do layout para download. Padrão: `layout_<fileName>_<modo>.csv` */
+  layoutFileName?: string;
 };
 
 export function ModalImport<TData extends ImportedRow = ImportedRow>({
@@ -91,6 +93,7 @@ export function ModalImport<TData extends ImportedRow = ImportedRow>({
   },
   toast,
   layoutDelimiter,
+  layoutFileName,
 }: ModalImportProps<TData>) {
   const notifyError = (message: string) => toast?.error(message);
   const [mode, setMode] = useState<ImportMode>("create");
@@ -309,7 +312,10 @@ export function ModalImport<TData extends ImportedRow = ImportedRow>({
 
       const link = document.createElement("a");
       link.setAttribute("href", objUrl);
-      link.setAttribute("download", `layout_${fileName}_${modeMap[mode]}.csv`);
+      link.setAttribute(
+        "download",
+        layoutFileName || `layout_${fileName}_${modeMap[mode]}.csv`,
+      );
       link.click();
 
       URL.revokeObjectURL(objUrl);
