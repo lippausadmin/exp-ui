@@ -18,6 +18,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
@@ -33,7 +34,9 @@ type MultiSelectContextType = {
   items: Map<string, ReactNode>;
   single: boolean;
   onItemAdded: (value: string, label: ReactNode) => void;
+  onItemsAdded: (entries: Array<[string, ReactNode]>) => void;
   clearAll: () => void;
+  setAll: (values: string[]) => void;
 };
 const MultiSelectContext = createContext<MultiSelectContextType | null>(null);
 
@@ -52,7 +55,7 @@ export function MultiSelect({
 }) {
   const [open, setOpen] = useState(false);
   const [internalValues, setInternalValues] = useState(new Set<string>(values ?? defaultValues));
-  const selectedValues = values ? new Set(values) : internalValues;
+  const selectedValues = useMemo(() => (values ? new Set(values) : internalValues), [values, internalValues]);
   const [items, setItems] = useState<Map<string, ReactNode>>(new Map());
 
   function toggleValue(value: string) {
@@ -73,17 +76,31 @@ export function MultiSelect({
     if (single) setOpen(false);
   }
 
-  const onItemAdded = useCallback((value: string, label: ReactNode) => {
+  // Em lote: com "(Todos)" são milhares de itens, e um Map novo por item seria quadrático.
+  const onItemsAdded = useCallback((entries: Array<[string, ReactNode]>) => {
     setItems((prev) => {
-      if (prev.get(value) === label) return prev;
-      return new Map(prev).set(value, label);
+      const changed = entries.filter(([value, label]) => prev.get(value) !== label);
+      if (changed.length === 0) return prev;
+      const next = new Map(prev);
+      for (const [value, label] of changed) next.set(value, label);
+      return next;
     });
   }, []);
 
-  const clearAll = useCallback(() => {
-    setInternalValues(new Set<string>());
-    onValuesChange?.([]);
-  }, [onValuesChange]);
+  const onItemAdded = useCallback(
+    (value: string, label: ReactNode) => onItemsAdded([[value, label]]),
+    [onItemsAdded],
+  );
+
+  const setAll = useCallback(
+    (nextValues: string[]) => {
+      setInternalValues(new Set(nextValues));
+      onValuesChange?.(nextValues);
+    },
+    [onValuesChange],
+  );
+
+  const clearAll = useCallback(() => setAll([]), [setAll]);
 
   return (
     <MultiSelectContext.Provider
@@ -95,7 +112,9 @@ export function MultiSelect({
         toggleValue,
         items,
         onItemAdded,
+        onItemsAdded,
         clearAll,
+        setAll,
       }}
     >
       <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -185,7 +204,8 @@ export function MultiSelectValue({
     }
 
     let amount = 0;
-    for (let i = items.length - 1; i >= 0; i--) {
+    // O primeiro item nunca é escondido: ele trunca, em vez de virar só "+1".
+    for (let i = items.length - 1; i >= 1; i--) {
       if (containerElement.scrollWidth <= containerElement.clientWidth) {
         break;
       }
@@ -248,7 +268,7 @@ export function MultiSelectValue({
           <Badge
             variant="outline"
             data-selected-item
-            className="group flex items-center gap-1 px-1.5 text-[10px]"
+            className="group flex min-w-0 shrink items-center gap-1 px-1.5 text-[10px]"
             key={value}
             onClick={
               clickToRemove
@@ -259,8 +279,8 @@ export function MultiSelectValue({
                 : undefined
             }
           >
-            {items.get(value)}
-            {clickToRemove && <XIcon className="text-muted-foreground group-hover:text-destructive" />}
+            <span className="min-w-0 truncate">{items.get(value)}</span>
+            {clickToRemove && <XIcon className="text-muted-foreground group-hover:text-destructive shrink-0" />}
           </Badge>
         ))}
       <Badge
